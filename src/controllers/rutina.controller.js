@@ -17,7 +17,12 @@ export const crearRutina = async (req, res) => {
     // 2. Si hay ejercicios, buscarlos por slug y asociarlos por su PK numérico
     if (ejercicios && ejercicios.length > 0) {
       for (const ej of ejercicios) {
-        const exercise = await Ejercicio.findOne({ where: { slug: ej.ejercicioId } });
+        const rawId = ej.ejercicioId;
+        const isNumeric = typeof rawId === 'number' || (typeof rawId === 'string' && /^\d+$/.test(rawId));
+        const exercise = isNumeric
+          ? await Ejercicio.findByPk(Number(rawId))
+          : await Ejercicio.findOne({ where: { slug: String(rawId) } });
+
         if (exercise) {
           await rutina.addEjercicio(exercise.id_ejercicio, {
             through: {
@@ -27,7 +32,7 @@ export const crearRutina = async (req, res) => {
             },
           });
         } else {
-          console.warn(`Ejercicio con slug '${ej.ejercicioId}' no encontrado en la BD. No se asoció a la rutina.`);
+          console.warn(`Ejercicio con identificador '${rawId}' no encontrado (se admite ID numérico o slug).`);
         }
       }
     }
@@ -109,16 +114,19 @@ export const subirImagenRutina = async (req, res) => {
 export const asociarEjercicio = async (req, res) => {
   try {
     const { rutinaId } = req.params;
-    const { ejercicioId: slug, orden, series, repeticiones, descanso_seg, notas } = req.body;
+    const { ejercicioId, orden, series, repeticiones, descanso_seg, notas } = req.body;
 
     const rutina = await Rutina.findByPk(rutinaId);
     if (!rutina) {
       return res.status(404).json({ error: 'Rutina no encontrada' });
     }
 
-    const ejercicio = await Ejercicio.findOne({ where: { slug } });
+    const isNumeric = typeof ejercicioId === 'number' || (typeof ejercicioId === 'string' && /^\d+$/.test(ejercicioId));
+    const ejercicio = isNumeric
+      ? await Ejercicio.findByPk(Number(ejercicioId))
+      : await Ejercicio.findOne({ where: { slug: String(ejercicioId) } });
     if (!ejercicio) {
-      return res.status(404).json({ error: `Ejercicio con slug '${slug}' no encontrado` });
+      return res.status(404).json({ error: `Ejercicio con identificador '${ejercicioId}' no encontrado (se admite ID numérico o slug)` });
     }
 
     const association = await RutinaEjercicio.findOne({
@@ -148,7 +156,18 @@ export const desasociarEjercicio = async (req, res) => {
     const { rutinaId, ejercicioId } = req.params;
     const rutina = await Rutina.findByPk(rutinaId);
     if (!rutina) return res.status(404).json({ error: 'Rutina no encontrada' });
-    await rutina.removeEjercicio(ejercicioId);
+
+    const isNumeric = typeof ejercicioId === 'number' || (typeof ejercicioId === 'string' && /^\d+$/.test(ejercicioId));
+    let ejercicioPk = null;
+    if (isNumeric) {
+      ejercicioPk = Number(ejercicioId);
+    } else {
+      const ejercicio = await Ejercicio.findOne({ where: { slug: String(ejercicioId) } });
+      if (!ejercicio) return res.status(404).json({ error: `Ejercicio '${ejercicioId}' no encontrado` });
+      ejercicioPk = ejercicio.id_ejercicio;
+    }
+
+    await rutina.removeEjercicio(ejercicioPk);
     res.json({ mensaje: 'Desasociado' });
   } catch (err) {
     res.status(500).json({ error: err.message });

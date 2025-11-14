@@ -99,7 +99,10 @@ router.post('/:id/imagen', upload.single('file'), subirImagenRutina);
  *             type: object
  *             properties:
  *               ejercicioId:
- *                 type: integer
+ *                 oneOf:
+ *                   - type: integer
+ *                   - type: string
+ *                 description: ID numérico del ejercicio o slug (string)
  *               orden:
  *                 type: integer
  *               series:
@@ -148,7 +151,10 @@ router.get('/:rutinaId/ejercicios', listarEjerciciosDeRutina);
  *         name: ejercicioId
  *         required: true
  *         schema:
- *           type: integer
+ *           oneOf:
+ *             - type: integer
+ *             - type: string
+ *           description: ID numérico del ejercicio o slug (string)
  *     responses:
  *       200:
  *         description: Desasociado
