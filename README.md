@@ -81,3 +81,4 @@ Note: Render’s container filesystem is ephemeral. Files may be lost on redeplo
 
 - API Docs UI at `/api-docs`
 - JSON spec at `/api-docs.json`
+ - By default, Swagger calls the same origin where the UI is hosted. If you need to override, set `SERVER_URL` in the service environment with your public URL.

@@ -10,9 +10,11 @@ const options = {
     },
     // Seguridad global para que Swagger UI muestre el botón "Authorize" (Bearer JWT)
     security: [{ bearerAuth: [] }],
+    // Usar la misma URL de donde se sirve Swagger UI por defecto.
+    // En producción (Render) evita que Swagger intente llamar a localhost.
     servers: [
       {
-        url: process.env.SERVER_URL || `http://localhost:${process.env.PORT || 3000}`,
+        url: process.env.SERVER_URL || '/',
       },
     ],
   },
